@@ -1,0 +1,19 @@
+{
+  "name": "Innocent's Loan Tracker",
+  "short_name": "Loan Tracker",
+  "description": "Track loan applications, disbursements, targets, and daily reflections.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#15161A",
+  "theme_color": "#15161A",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

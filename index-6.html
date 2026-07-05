@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Innocent's Loan Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#15161A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Innocent's Tracker">
+<style>
+  :root{
+    --bg:#15161A;
+    --panel:#1F2126;
+    --line:#34363D;
+    --green:#D4AF37;
+    --green-dim:#4A3D1C;
+    --red:#C97A5C;
+    --red-dim:#3D2A20;
+    --text:#F3EFE6;
+    --sub:#9A9CA5;
+    --amber:#E8C77C;
+    --gold-soft:#B8934A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(212,175,55,0.07) 0%, transparent 40%),
+      radial-gradient(circle at 90% 15%, rgba(212,175,55,0.05) 0%, transparent 45%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    padding:0 0 60px;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    pointer-events:none;
+    opacity:0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='1.4'%3E%3Cpath d='M40 190 C40 150 55 120 40 90 C25 120 40 150 40 190 Z'/%3E%3Cpath d='M40 150 C55 145 68 130 70 110'/%3E%3Cpath d='M40 130 C25 125 12 110 10 90'/%3E%3Cpath d='M190 60 L190 20 M178 32 L190 20 L202 32'/%3E%3Cpath d='M170 60 C170 40 180 28 190 20 C200 28 210 40 210 60 C210 75 200 85 190 85 C180 85 170 75 170 60 Z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 300px 300px;
+    z-index:0;
+  }
+  header, .tabs, .view{
+    position:relative;
+    z-index:1;
+  }
+  header{
+    padding:28px 20px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  header h1{
+    margin:0;
+    font-size:23px;
+    font-family:Georgia,'Times New Roman',serif;
+    letter-spacing:0.4px;
+    color:var(--text);
+  }
+  header p{
+    margin:6px 0 0;
+    color:var(--sub);
+    font-size:13px;
+  }
+  .tabs{
+    display:flex;
+    gap:0;
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    background:var(--bg);
+    z-index:10;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:14px 0;
+    font-size:14px;
+    color:var(--sub);
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+  }
+  .tab.active{
+    color:var(--text);
+    border-bottom:2px solid var(--green);
+  }
+  .view{
+    display:none;
+    padding:20px;
+    max-width:520px;
+    margin:0 auto;
+  }
+  .view.active{display:block;}
+
+  .counter-row{
+    display:flex;
+    gap:14px;
+    margin:18px 0 8px;
+  }
+  .counter{
+    flex:1;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 12px;
+    text-align:center;
+  }
+  .counter.approved{border-color:var(--green-dim);}
+  .counter.rejected{border-color:var(--red-dim);}
+  .counter .label{
+    font-size:12px;
+    color:var(--sub);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+  }
+  .counter .num{
+    font-size:38px;
+    font-weight:700;
+    margin:8px 0;
+  }
+  .counter.approved .num{color:var(--green);}
+  .counter.rejected .num{color:var(--red);}
+  .btn-row{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+  }
+  .stepper{
+    width:42px;
+    height:42px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#1D231E;
+    color:var(--text);
+    font-size:20px;
+    cursor:pointer;
+  }
+  .stepper:active{transform:scale(0.95);}
+
+  label{
+    font-size:12px;
+    color:var(--sub);
+    display:block;
+    margin:16px 0 6px;
+  }
+  input[type=date]{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:12px;
+    border-radius:8px;
+    font-size:15px;
+  }
+  .save-btn{
+    width:100%;
+    margin-top:18px;
+    padding:14px;
+    background:var(--green);
+    color:#0B140D;
+    font-weight:600;
+    font-size:15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .save-btn:active{opacity:0.85;}
+
+  .section-title{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--sub);
+    margin:28px 0 10px;
+  }
+  .entry{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .entry .date{color:var(--text);}
+  .entry .counts{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .pill{
+    padding:3px 9px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+  }
+  .pill.a{background:var(--green-dim);color:var(--green);}
+  .pill.r{background:var(--red-dim);color:var(--red);}
+  .del{
+    background:none;
+    border:none;
+    color:var(--sub);
+    font-size:16px;
+    cursor:pointer;
+    padding:0 4px;
+  }
+  .empty{
+    color:var(--sub);
+    font-size:13px;
+    padding:20px 0;
+    text-align:center;
+  }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+  }
+  .stat .label{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;}
+  .stat .val{font-size:22px;font-weight:700;margin-top:4px;}
+
+  .week-card, .month-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:12px;
+  }
+  .week-card .wk-title, .month-card .mo-title{
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .week-card .wk-title span:last-child{color:var(--sub);font-weight:400;font-size:12px;}
+  .rate-bar{
+    height:6px;
+    border-radius:4px;
+    background:var(--red-dim);
+    overflow:hidden;
+    margin-top:10px;
+  }
+  .rate-bar .fill{
+    height:100%;
+    background:var(--green);
+  }
+  .rate-label{
+    font-size:11px;
+    color:var(--sub);
+    margin-top:4px;
+  }
+
+  input[type=text], input[type=number]{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:12px;
+    border-radius:8px;
+    font-size:15px;
+  }
+  textarea{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:10px;
+    border-radius:8px;
+    font-size:14px;
+    margin-top:8px;
+    resize:vertical;
+    min-height:60px;
+  }
+
+  .disc-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .disc-card.pending{border-color:var(--amber);}
+  .disc-card.withdrawn{border-color:var(--green-dim);}
+  .disc-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .disc-name{font-weight:600;font-size:14px;}
+  .disc-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+  .disc-amt{font-weight:700;font-size:15px;color:var(--green);}
+  .disc-actions{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .mini-btn{
+    flex:1;
+    padding:9px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:#1D231E;
+    color:var(--text);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .mini-btn.primary{
+    background:var(--green);
+    color:#0B140D;
+    font-weight:600;
+    border:none;
+  }
+  .mini-btn.danger{color:var(--red);}
+  .comment-saved{
+    font-size:12px;
+    color:var(--amber);
+    margin-top:8px;
+    font-style:italic;
+  }
+
+  .target-progress{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:16px;
+  }
+  .tp-row{margin-bottom:12px;}
+  .tp-row:last-child{margin-bottom:0;}
+  .tp-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--sub);
+    margin-bottom:5px;
+  }
+  .tp-label b{color:var(--text);}
+
+  .journal-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .journal-date{
+    font-weight:600;
+    font-size:14px;
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .journal-field{margin-bottom:8px;}
+  .journal-field .jf-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--amber);
+    margin-bottom:2px;
+  }
+  .journal-field .jf-text{
+    font-size:13px;
+    color:var(--text);
+    white-space:pre-wrap;
+  }
+  .welcome-screen{
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    z-index:100;
+    background:var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    transition:opacity 0.5s ease, visibility 0.5s ease;
+  }
+  .welcome-screen.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .welcome-glow{
+    position:absolute;
+    top:-20%; left:50%;
+    width:140%;
+    height:70%;
+    transform:translateX(-50%);
+    background:radial-gradient(circle, rgba(212,175,55,0.14) 0%, transparent 65%);
+    pointer-events:none;
+  }
+  .welcome-content{
+    position:relative;
+    z-index:1;
+    text-align:center;
+    padding:0 32px;
+    animation:welcomeRise 0.9s ease both;
+  }
+  @keyframes welcomeRise{
+    from{opacity:0; transform:translateY(18px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .welcome-icon{
+    font-size:50px;
+    margin-bottom:14px;
+    filter:drop-shadow(0 0 18px rgba(212,175,55,0.35));
+  }
+  .welcome-eyebrow{
+    font-size:12px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sub);
+    margin-bottom:10px;
+  }
+  .welcome-title{
+    font-size:30px;
+    font-weight:700;
+    font-family:Georgia,'Times New Roman',serif;
+    line-height:1.3;
+    margin:0 0 14px;
+    color:var(--text);
+  }
+  .welcome-title span{
+    color:var(--green);
+  }
+  .welcome-quote{
+    color:var(--amber);
+    font-size:14px;
+    font-style:italic;
+    line-height:1.6;
+    margin:0 0 10px;
+    max-width:320px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .welcome-sub{
+    color:var(--sub);
+    font-size:13px;
+    margin:0 0 30px;
+  }
+  .welcome-btn{
+    padding:14px 34px;
+    background:var(--green);
+    color:#1A1508;
+    font-weight:600;
+    font-size:15px;
+    border:none;
+    border-radius:30px;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(212,175,55,0.28);
+  }
+  .welcome-btn:active{
+    transform:scale(0.96);
+  }
+
+  /* ---- Streak & motivation ---- */
+  .streak-card{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(184,147,74,0.05) 100%);
+    border:1px solid var(--gold-soft);
+    border-radius:14px;
+    padding:16px;
+    margin:18px 0 6px;
+    position:relative;
+    overflow:hidden;
+  }
+  .streak-ring{
+    position:relative;
+    width:62px;
+    height:62px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .streak-ring svg{
+    position:absolute;
+    top:0; left:0;
+    transform:rotate(-90deg);
+  }
+  .streak-ring .ring-bg{fill:none;stroke:var(--line);stroke-width:5;}
+  .streak-ring .ring-fill{
+    fill:none;
+    stroke:var(--green);
+    stroke-width:5;
+    stroke-linecap:round;
+    transition:stroke-dashoffset 0.8s ease;
+  }
+  .streak-ring .ring-num{
+    font-size:19px;
+    font-weight:700;
+    color:var(--amber);
+  }
+  .streak-info .streak-title{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    margin-bottom:3px;
+  }
+  .streak-info .streak-sub{
+    font-size:12px;
+    color:var(--sub);
+  }
+  .quote-strip{
+    text-align:center;
+    padding:14px 10px 4px;
+    color:var(--amber);
+    font-style:italic;
+    font-size:13px;
+    line-height:1.5;
+    opacity:0;
+    animation:fadeInQuote 1s ease 0.15s forwards;
+  }
+  @keyframes fadeInQuote{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---- Mood picker ---- */
+  .mood-row{
+    display:flex;
+    gap:8px;
+    margin:8px 0 4px;
+  }
+  .mood-btn{
+    flex:1;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 4px;
+    font-size:22px;
+    text-align:center;
+    cursor:pointer;
+    transition:transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .mood-btn.selected{
+    border-color:var(--green);
+    background:var(--green-dim);
+    transform:scale(1.08);
+  }
+  .mood-btn:active{transform:scale(0.94);}
+
+  /* ---- Gradient stat cards ---- */
+  .counter.approved{
+    background:linear-gradient(160deg, rgba(212,175,55,0.10), var(--panel) 65%);
+  }
+  .counter.rejected{
+    background:linear-gradient(160deg, rgba(201,122,92,0.10), var(--panel) 65%);
+  }
+  .stat, .week-card, .month-card{
+    background:linear-gradient(160deg, rgba(212,175,55,0.05), var(--panel) 70%);
+  }
+
+  /* ---- Celebration ---- */
+  .celebrate-pulse{
+    animation:celebratePulse 0.6s ease;
+  }
+  @keyframes celebratePulse{
+    0%{box-shadow:0 0 0 0 rgba(212,175,55,0.55);}
+    70%{box-shadow:0 0 0 18px rgba(212,175,55,0);}
+    100%{box-shadow:0 0 0 0 rgba(212,175,55,0);}
+  }
+  .confetti-piece{
+    position:fixed;
+    top:-10px;
+    z-index:999;
+    pointer-events:none;
+    border-radius:2px;
+    animation:confettiFall linear forwards;
+  }
+  @keyframes confettiFall{
+    to{
+      transform:translateY(110vh) rotate(540deg);
+      opacity:0.9;
+    }
+  }
+  .toast-banner{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--panel);
+    border:1px solid var(--gold-soft);
+    color:var(--text);
+    padding:12px 20px;
+    border-radius:30px;
+    font-size:13px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    z-index:1000;
+    opacity:0;
+    transition:opacity 0.35s ease, transform 0.35s ease;
+    max-width:86%;
+    text-align:center;
+  }
+  .toast-banner.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-glow"></div>
+  <div class="welcome-content">
+    <div class="welcome-icon">🌿</div>
+    <div class="welcome-eyebrow">Loan Tracker</div>
+    <h1 class="welcome-title">Welcome back,<br><span>Innocent</span></h1>
+    <p class="welcome-quote" id="welcomeQuote">Every strong tree was once a seed that held its ground.</p>
+    <p class="welcome-sub" id="welcomeGreeting">Ready to make today count.</p>
+    <button class="welcome-btn" onclick="dismissWelcome()">Let's get started</button>
+  </div>
+</div>
+
+<header>
+  <h1>Innocent's Loan Tracker</h1>
+  <p>Log approved / rejected applications by day. Weekly and monthly totals update automatically.</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-view="daily">Daily</div>
+  <div class="tab" data-view="disburse">Disburse</div>
+  <div class="tab" data-view="journal">Journal</div>
+  <div class="tab" data-view="weekly">Weekly</div>
+  <div class="tab" data-view="monthly">Monthly</div>
+  <div class="tab" data-view="targets">Targets</div>
+  <div class="tab" data-view="alerts">Alerts</div>
+</div>
+
+<!-- DAILY -->
+<div class="view active" id="view-daily">
+  <div class="streak-card" id="streakCard">
+    <div class="streak-ring">
+      <svg width="62" height="62">
+        <circle class="ring-bg" cx="31" cy="31" r="26"></circle>
+        <circle class="ring-fill" id="streakRingFill" cx="31" cy="31" r="26" stroke-dasharray="163" stroke-dashoffset="163"></circle>
+      </svg>
+      <span class="ring-num" id="streakRingNum">0</span>
+    </div>
+    <div class="streak-info">
+      <div class="streak-title" id="streakTitle">Start your streak today</div>
+      <div class="streak-sub" id="streakSub">Log an entry to get going</div>
+    </div>
+  </div>
+  <div class="quote-strip" id="dailyQuoteStrip"></div>
+
+  <label for="entryDate">Date</label>
+  <input type="date" id="entryDate">
+
+  <label>How's today going?</label>
+  <div class="mood-row" id="moodRow">
+    <button type="button" class="mood-btn" data-mood="fire" onclick="pickMood('fire')">🔥</button>
+    <button type="button" class="mood-btn" data-mood="good" onclick="pickMood('good')">🙂</button>
+    <button type="button" class="mood-btn" data-mood="okay" onclick="pickMood('okay')">😐</button>
+    <button type="button" class="mood-btn" data-mood="tough" onclick="pickMood('tough')">🌧️</button>
+  </div>
+
+  <div class="counter-row">
+    <div class="counter approved">
+      <div class="label">Approved</div>
+      <div class="num" id="approvedNum">0</div>
+      <div class="btn-row">
+        <button class="stepper" onclick="step('approved',-1)">−</button>
+        <button class="stepper" onclick="step('approved',1)">+</button>
+      </div>
+    </div>
+    <div class="counter rejected">
+      <div class="label">Rejected</div>
+      <div class="num" id="rejectedNum">0</div>
+      <div class="btn-row">
+        <button class="stepper" onclick="step('rejected',-1)">−</button>
+        <button class="stepper" onclick="step('rejected',1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveEntry()">Save entry for this date</button>
+
+  <div class="section-title">Recent entries</div>
+  <div id="logList"><div class="empty">No entries yet</div></div>
+</div>
+
+<!-- DISBURSEMENT & WITHDRAWAL -->
+<div class="view" id="view-disburse">
+  <div class="section-title">Log a disbursement</div>
+  <label for="discMerchant">Merchant name</label>
+  <input type="text" id="discMerchant" placeholder="e.g. Mama Ngozi Provisions">
+  <label for="discPhone">Phone number</label>
+  <input type="text" id="discPhone" placeholder="080...">
+  <label for="discAmount">Loan amount (₦)</label>
+  <input type="number" id="discAmount" placeholder="e.g. 300000">
+  <label for="discDate">Disbursement date</label>
+  <input type="date" id="discDate">
+  <button class="save-btn" onclick="saveDisbursement()">Save disbursement</button>
+
+  <div class="section-title">Awaiting withdrawal</div>
+  <div id="pendingList"><div class="empty">Nothing pending</div></div>
+
+  <div class="section-title">Withdrawn (commission earned)</div>
+  <div id="withdrawnList"><div class="empty">None yet</div></div>
+</div>
+
+<!-- JOURNAL -->
+<div class="view" id="view-journal">
+  <div class="section-title">Today's reflection</div>
+  <label for="journalDate">Date</label>
+  <input type="date" id="journalDate">
+
+  <label for="journalWins">What went well / achievements</label>
+  <textarea id="journalWins" placeholder="e.g. Closed 2 disbursements, new merchant referral from Mama Ngozi..."></textarea>
+
+  <label for="journalChallenges">Challenges faced</label>
+  <textarea id="journalChallenges" placeholder="e.g. Rain slowed visits, 2 merchants unreachable, network issues at POS..."></textarea>
+
+  <label for="journalImprove">What to improve tomorrow</label>
+  <textarea id="journalImprove" placeholder="e.g. Call ahead before visiting, pre-qualify docs better, leave earlier..."></textarea>
+
+  <label for="journalRecs">Recommendations / ideas</label>
+  <textarea id="journalRecs" placeholder="e.g. Focus on merchants with POS + high turnover, follow up rejected merchants after cooldown..."></textarea>
+
+  <button class="save-btn" onclick="saveJournal()">Save today's reflection</button>
+
+  <div class="section-title">Past entries</div>
+  <div id="journalList"><div class="empty">No entries yet</div></div>
+</div>
+
+<!-- WEEKLY -->
+<div class="view" id="view-weekly">
+  <div class="section-title">This week vs target</div>
+  <div id="weeklyTargetBox"></div>
+  <div class="section-title">Weekly breakdown</div>
+  <div id="weeklyList"><div class="empty">No data yet</div></div>
+</div>
+
+<!-- MONTHLY -->
+<div class="view" id="view-monthly">
+  <div class="section-title">This month vs target</div>
+  <div id="monthlyTargetBox"></div>
+  <div class="section-title">This month</div>
+  <div class="stat-grid" id="monthStatGrid"></div>
+  <div class="section-title">Month by month</div>
+  <div id="monthlyList"><div class="empty">No data yet</div></div>
+</div>
+
+<!-- TARGETS -->
+<div class="view" id="view-targets">
+  <div class="section-title">Set your own targets</div>
+  <label for="tgtDailyApp">Daily applications target</label>
+  <input type="number" id="tgtDailyApp" placeholder="e.g. 3">
+  <label for="tgtWeeklyApp">Weekly approved applications target</label>
+  <input type="number" id="tgtWeeklyApp" placeholder="e.g. 12">
+  <label for="tgtMonthlyApp">Monthly approved applications target</label>
+  <input type="number" id="tgtMonthlyApp" placeholder="e.g. 39">
+  <label for="tgtWeeklyDisc">Weekly disbursements target</label>
+  <input type="number" id="tgtWeeklyDisc" placeholder="e.g. 5">
+  <label for="tgtMonthlyDisc">Monthly disbursements target</label>
+  <input type="number" id="tgtMonthlyDisc" placeholder="e.g. 15">
+  <button class="save-btn" onclick="saveTargets()">Save targets</button>
+  <p style="color:var(--sub);font-size:12px;margin-top:14px;">These targets drive the progress bars on the Weekly and Monthly tabs. Update them any time your goals change.</p>
+</div>
+
+<div class="view" id="view-alerts">
+  <div class="section-title">Daily reminders</div>
+  <p style="color:var(--sub);font-size:13px;margin:0 0 16px;">Set times for the app to nudge you to log entries. These fire while the app is open on your phone \u2014 for a guaranteed wake-up call, pair this with your phone's own alarm too.</p>
+
+  <div id="notifyPermissionBox"></div>
+
+  <label for="reminderTime">Reminder time</label>
+  <input type="time" id="reminderTime">
+  <label for="reminderLabel">Label (optional)</label>
+  <input type="text" id="reminderLabel" placeholder="e.g. Log today's applications">
+  <button class="save-btn" onclick="addReminder()">Add reminder</button>
+
+  <div class="section-title">Active reminders</div>
+  <div id="reminderList"><div class="empty">No reminders set yet</div></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'saLoanTrackerData';
+let pending = { approved: 0, rejected: 0 };
+let entries = [];
+
+function loadAll() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      entries = parsed.filter(e => e && e.date);
+    } else {
+      // Migrate old aggregated-by-date format to individual entries
+      entries = Object.keys(parsed || {}).map(date => ({
+        id: date + '_migrated',
+        date,
+        approved: parsed[date].approved || 0,
+        rejected: parsed[date].rejected || 0
+      }));
+      persist();
+    }
+  } catch (e) {
+    entries = [];
+  }
+}
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch (e) {
+    alert('Could not save. Your browser may be blocking storage.');
+  }
+}
+
+function aggregateByDate() {
+  const cache = {};
+  entries.forEach(e => {
+    if (!cache[e.date]) cache[e.date] = { approved: 0, rejected: 0 };
+    cache[e.date].approved += e.approved;
+    cache[e.date].rejected += e.rejected;
+  });
+  return cache;
+}
+
+function saveEntry() {
+  const date = document.getElementById('entryDate').value;
+  if (!date) { alert('Pick a date first'); return; }
+  if (pending.approved === 0 && pending.rejected === 0) { alert('Add at least one count'); return; }
+
+  entries.push({
+    id: Date.now().toString(),
+    date,
+    approved: pending.approved,
+    rejected: pending.rejected
+  });
+  persist();
+
+  if (currentMood) {
+    moods[date] = currentMood;
+    persistMoods();
+  }
+
+  const hitDailyTarget = targets.dailyApp > 0 && pending.approved >= targets.dailyApp;
+
+  pending = { approved: 0, rejected: 0 };
+  document.getElementById('approvedNum').textContent = '0';
+  document.getElementById('rejectedNum').textContent = '0';
+  currentMood = null;
+  document.querySelectorAll('#moodRow .mood-btn').forEach(b => b.classList.remove('selected'));
+
+  renderDailyLog();
+  renderWeekly();
+  renderMonthly();
+  renderStreak();
+
+  if (hitDailyTarget) {
+    celebrate('Daily target hit \u2014 well done! \ud83c\udf89');
+  } else {
+    showToast('Entry saved. Keep the momentum going \ud83c\udf31');
+  }
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  entries = entries.filter(e => e.id !== id);
+  persist();
+  renderDailyLog();
+  renderWeekly();
+  renderMonthly();
+}
+
+function step(type, dir) {
+  pending[type] = Math.max(0, pending[type] + dir);
+  document.getElementById(type + 'Num').textContent = pending[type];
+}
+
+function renderDailyLog() {
+  const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const el = document.getElementById('logList');
+  if (sorted.length === 0) { el.innerHTML = '<div class="empty">No entries yet</div>'; return; }
+  el.innerHTML = sorted.slice(0, 30).map(e => {
+    const dObj = new Date(e.date + 'T00:00:00');
+    const label = dObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    return `<div class="entry">
+      <span class="date">${label}</span>
+      <span class="counts">
+        <span class="pill a">A ${e.approved}</span>
+        <span class="pill r">R ${e.rejected}</span>
+        <button class="del" onclick="deleteEntry('${e.id}')">✕</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() + '-W' + String(weekNo).padStart(2, '0');
+}
+
+function renderWeekly() {
+  renderWeeklyTargetBox();
+  const cache = aggregateByDate();
+  const weeks = {};
+  Object.keys(cache).forEach(d => {
+    const wk = getISOWeek(new Date(d + 'T00:00:00'));
+    if (!weeks[wk]) weeks[wk] = { approved: 0, rejected: 0, days: [] };
+    weeks[wk].approved += cache[d].approved;
+    weeks[wk].rejected += cache[d].rejected;
+    weeks[wk].days.push(d);
+  });
+  const keys = Object.keys(weeks).sort().reverse();
+  const el = document.getElementById('weeklyList');
+  if (keys.length === 0) { el.innerHTML = '<div class="empty">No data yet</div>'; return; }
+  el.innerHTML = keys.map(wk => {
+    const w = weeks[wk];
+    const total = w.approved + w.rejected;
+    const rate = total ? Math.round((w.approved / total) * 100) : 0;
+    const firstDay = w.days.sort()[0];
+    const lastDay = w.days.sort().slice(-1)[0];
+    return `<div class="week-card">
+      <div class="wk-title"><span>${wk}</span><span>${firstDay} → ${lastDay}</span></div>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat"><div class="label">Approved</div><div class="val" style="color:var(--green)">${w.approved}</div></div>
+        <div class="stat"><div class="label">Rejected</div><div class="val" style="color:var(--red)">${w.rejected}</div></div>
+      </div>
+      <div class="rate-bar"><div class="fill" style="width:${rate}%"></div></div>
+      <div class="rate-label">${rate}% approval rate · ${total} total this week</div>
+    </div>`;
+  }).join('');
+}
+
+function renderMonthly() {
+  renderMonthlyTargetBox();
+  const cache = aggregateByDate();
+  const months = {};
+  Object.keys(cache).forEach(d => {
+    const mo = d.slice(0, 7);
+    if (!months[mo]) months[mo] = { approved: 0, rejected: 0, days: 0 };
+    months[mo].approved += cache[d].approved;
+    months[mo].rejected += cache[d].rejected;
+    months[mo].days += 1;
+  });
+  const keys = Object.keys(months).sort().reverse();
+
+  const thisMonthKey = new Date().toISOString().slice(0, 7);
+  const tm = months[thisMonthKey] || { approved: 0, rejected: 0, days: 0 };
+  const tmTotal = tm.approved + tm.rejected;
+  const avgPerDay = tm.days ? (tmTotal / tm.days).toFixed(1) : '0';
+  const approvalRate = tmTotal ? Math.round((tm.approved / tmTotal) * 100) : 0;
+
+  document.getElementById('monthStatGrid').innerHTML = `
+    <div class="stat"><div class="label">Approved</div><div class="val" style="color:var(--green)">${tm.approved}</div></div>
+    <div class="stat"><div class="label">Rejected</div><div class="val" style="color:var(--red)">${tm.rejected}</div></div>
+    <div class="stat"><div class="label">Avg / active day</div><div class="val">${avgPerDay}</div></div>
+    <div class="stat"><div class="label">Approval rate</div><div class="val" style="color:var(--amber)">${approvalRate}%</div></div>
+  `;
+
+  const el = document.getElementById('monthlyList');
+  if (keys.length === 0) { el.innerHTML = '<div class="empty">No data yet</div>'; return; }
+  el.innerHTML = keys.map(mo => {
+    const m = months[mo];
+    const total = m.approved + m.rejected;
+    const rate = total ? Math.round((m.approved / total) * 100) : 0;
+    const avg = m.days ? (total / m.days).toFixed(1) : '0';
+    const label = new Date(mo + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    return `<div class="month-card">
+      <div class="mo-title"><span>${label}</span><span>${m.days} active days</span></div>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat"><div class="label">Approved</div><div class="val" style="color:var(--green)">${m.approved}</div></div>
+        <div class="stat"><div class="label">Rejected</div><div class="val" style="color:var(--red)">${m.rejected}</div></div>
+      </div>
+      <div class="rate-bar"><div class="fill" style="width:${rate}%"></div></div>
+      <div class="rate-label">${rate}% approval rate · avg ${avg}/day</div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Mood tracking ----------
+const MOOD_KEY = 'saMoods';
+let moods = {};
+let currentMood = null;
+
+function loadMoods() {
+  try {
+    const raw = localStorage.getItem(MOOD_KEY);
+    moods = raw ? JSON.parse(raw) : {};
+  } catch (e) { moods = {}; }
+}
+function persistMoods() {
+  try { localStorage.setItem(MOOD_KEY, JSON.stringify(moods)); } catch (e) {}
+}
+function pickMood(mood) {
+  currentMood = mood;
+  document.querySelectorAll('#moodRow .mood-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.mood === mood);
+  });
+}
+
+// ---------- Streak ----------
+function renderStreak() {
+  const dateSet = new Set(entries.map(e => e.date));
+  let streak = 0;
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  // If nothing logged today yet, streak counting still looks back from yesterday
+  if (!dateSet.has(d.toISOString().slice(0, 10))) {
+    d.setDate(d.getDate() - 1);
+  }
+  while (dateSet.has(d.toISOString().slice(0, 10))) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+
+  const ring = document.getElementById('streakRingFill');
+  const num = document.getElementById('streakRingNum');
+  const title = document.getElementById('streakTitle');
+  const sub = document.getElementById('streakSub');
+  if (!ring) return;
+
+  const circumference = 163;
+  const capped = Math.min(streak, 30);
+  const offset = circumference - (capped / 30) * circumference;
+  ring.style.strokeDashoffset = streak === 0 ? circumference : offset;
+  num.textContent = streak;
+
+  if (streak === 0) {
+    title.textContent = 'Start your streak today';
+    sub.textContent = 'Log an entry to get going';
+  } else if (streak === 1) {
+    title.textContent = '1 day streak';
+    sub.textContent = 'Great start \u2014 log again tomorrow';
+  } else {
+    title.textContent = streak + ' day streak';
+    sub.textContent = streak >= 7 ? 'Outstanding consistency \ud83d\udd25' : 'Keep it going, day by day';
+  }
+
+  const card = document.getElementById('streakCard');
+  if (card && [3, 7, 14, 21, 30].includes(streak)) {
+    card.classList.remove('celebrate-pulse');
+    void card.offsetWidth;
+    card.classList.add('celebrate-pulse');
+  }
+}
+
+// ---------- Celebration effects ----------
+function showToast(msg) {
+  let el = document.getElementById('toastBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toastBanner';
+    el.className = 'toast-banner';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function confettiBurst() {
+  const colors = ['#D4AF37', '#E8C77C', '#B8934A', '#F3EFE6'];
+  for (let i = 0; i < 26; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const size = 5 + Math.random() * 6;
+    piece.style.width = size + 'px';
+    piece.style.height = (size * 0.4) + 'px';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const duration = 1.8 + Math.random() * 1.2;
+    piece.style.animationDuration = duration + 's';
+    piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), duration * 1000 + 100);
+  }
+}
+
+function celebrate(msg) {
+  confettiBurst();
+  showToast(msg);
+}
+
+// ---------- Disbursement & Withdrawal ----------
+const DISC_KEY = 'saDisbursements';
+let discs = [];
+
+function loadDiscs() {
+  try {
+    const raw = localStorage.getItem(DISC_KEY);
+    discs = raw ? JSON.parse(raw) : [];
+  } catch (e) { discs = []; }
+}
+function persistDiscs() {
+  try { localStorage.setItem(DISC_KEY, JSON.stringify(discs)); } catch (e) {}
+}
+
+function saveDisbursement() {
+  const name = document.getElementById('discMerchant').value.trim();
+  const phone = document.getElementById('discPhone').value.trim();
+  const amount = document.getElementById('discAmount').value;
+  const date = document.getElementById('discDate').value;
+  if (!name || !date) { alert('Merchant name and disbursement date are required'); return; }
+
+  discs.push({
+    id: Date.now().toString(),
+    name, phone, amount: amount || 0, date,
+    withdrawn: false, withdrawnDate: null, comment: ''
+  });
+  persistDiscs();
+
+  document.getElementById('discMerchant').value = '';
+  document.getElementById('discPhone').value = '';
+  document.getElementById('discAmount').value = '';
+  document.getElementById('discDate').value = '';
+
+  renderDiscs();
+}
+
+function markWithdrawn(id) {
+  const d = discs.find(x => x.id === id);
+  if (!d) return;
+  d.withdrawn = true;
+  d.withdrawnDate = new Date().toISOString().split('T')[0];
+  persistDiscs();
+  renderDiscs();
+}
+
+function saveComment(id) {
+  const box = document.getElementById('comment-' + id);
+  const d = discs.find(x => x.id === id);
+  if (!d || !box) return;
+  d.comment = box.value;
+  persistDiscs();
+  renderDiscs();
+}
+
+function deleteDisc(id) {
+  if (!confirm('Delete this disbursement record?')) return;
+  discs = discs.filter(x => x.id !== id);
+  persistDiscs();
+  renderDiscs();
+}
+
+function renderDiscs() {
+  const pending = discs.filter(d => !d.withdrawn).sort((a,b) => b.date.localeCompare(a.date));
+  const withdrawn = discs.filter(d => d.withdrawn).sort((a,b) => b.withdrawnDate.localeCompare(a.withdrawnDate));
+
+  const pEl = document.getElementById('pendingList');
+  pEl.innerHTML = pending.length === 0 ? '<div class="empty">Nothing pending</div>' : pending.map(d => `
+    <div class="disc-card pending">
+      <div class="disc-top">
+        <div>
+          <div class="disc-name">${d.name}</div>
+          <div class="disc-sub">${d.phone || 'No phone'} · Disbursed ${d.date}</div>
+        </div>
+        <div class="disc-amt">₦${Number(d.amount).toLocaleString()}</div>
+      </div>
+      <textarea id="comment-${d.id}" placeholder="Reason not yet withdrawn (e.g. merchant traveling, network issue, still deciding)...">${d.comment || ''}</textarea>
+      <div class="disc-actions">
+        <button class="mini-btn" onclick="saveComment('${d.id}')">Save comment</button>
+        <button class="mini-btn primary" onclick="markWithdrawn('${d.id}')">Mark withdrawn</button>
+        <button class="mini-btn danger" onclick="deleteDisc('${d.id}')">✕</button>
+      </div>
+      ${d.comment ? '<div class="comment-saved">Note saved</div>' : ''}
+    </div>
+  `).join('');
+
+  const wEl = document.getElementById('withdrawnList');
+  wEl.innerHTML = withdrawn.length === 0 ? '<div class="empty">None yet</div>' : withdrawn.map(d => `
+    <div class="disc-card withdrawn">
+      <div class="disc-top">
+        <div>
+          <div class="disc-name">${d.name}</div>
+          <div class="disc-sub">Withdrawn ${d.withdrawnDate} · disbursed ${d.date}</div>
+        </div>
+        <div class="disc-amt">₦${Number(d.amount).toLocaleString()}</div>
+      </div>
+      <div class="disc-actions">
+        <button class="mini-btn danger" onclick="deleteDisc('${d.id}')">✕ Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---------- Targets ----------
+const TARGET_KEY = 'saTargets';
+let targets = { dailyApp: 0, weeklyApp: 0, monthlyApp: 0, weeklyDisc: 0, monthlyDisc: 0 };
+
+function loadTargets() {
+  try {
+    const raw = localStorage.getItem(TARGET_KEY);
+    if (raw) targets = JSON.parse(raw);
+  } catch (e) {}
+  document.getElementById('tgtDailyApp').value = targets.dailyApp || '';
+  document.getElementById('tgtWeeklyApp').value = targets.weeklyApp || '';
+  document.getElementById('tgtMonthlyApp').value = targets.monthlyApp || '';
+  document.getElementById('tgtWeeklyDisc').value = targets.weeklyDisc || '';
+  document.getElementById('tgtMonthlyDisc').value = targets.monthlyDisc || '';
+}
+
+function saveTargets() {
+  targets = {
+    dailyApp: Number(document.getElementById('tgtDailyApp').value) || 0,
+    weeklyApp: Number(document.getElementById('tgtWeeklyApp').value) || 0,
+    monthlyApp: Number(document.getElementById('tgtMonthlyApp').value) || 0,
+    weeklyDisc: Number(document.getElementById('tgtWeeklyDisc').value) || 0,
+    monthlyDisc: Number(document.getElementById('tgtMonthlyDisc').value) || 0
+  };
+  try { localStorage.setItem(TARGET_KEY, JSON.stringify(targets)); } catch (e) {}
+  alert('Targets saved');
+  renderWeekly();
+  renderMonthly();
+}
+
+function progressBar(label, current, target) {
+  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+  return `<div class="tp-row">
+    <div class="tp-label"><span>${label}</span><b>${current} / ${target || '—'}</b></div>
+    <div class="rate-bar"><div class="fill" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function renderWeeklyTargetBox() {
+  const now = new Date();
+  const wk = getISOWeek(now);
+  const cache = aggregateByDate();
+  let wApproved = 0, wDisc = 0;
+  Object.keys(cache).forEach(d => {
+    if (getISOWeek(new Date(d + 'T00:00:00')) === wk) wApproved += cache[d].approved;
+  });
+  discs.forEach(d => {
+    if (getISOWeek(new Date(d.date + 'T00:00:00')) === wk) wDisc += 1;
+  });
+  document.getElementById('weeklyTargetBox').innerHTML = `<div class="target-progress">
+    ${progressBar('Approved applications', wApproved, targets.weeklyApp)}
+    ${progressBar('Disbursements', wDisc, targets.weeklyDisc)}
+  </div>`;
+}
+
+function renderMonthlyTargetBox() {
+  const mo = new Date().toISOString().slice(0, 7);
+  const cache = aggregateByDate();
+  let mApproved = 0, mDisc = 0;
+  Object.keys(cache).forEach(d => {
+    if (d.slice(0, 7) === mo) mApproved += cache[d].approved;
+  });
+  discs.forEach(d => {
+    if (d.date.slice(0, 7) === mo) mDisc += 1;
+  });
+  document.getElementById('monthlyTargetBox').innerHTML = `<div class="target-progress">
+    ${progressBar('Approved applications', mApproved, targets.monthlyApp)}
+    ${progressBar('Disbursements', mDisc, targets.monthlyDisc)}
+  </div>`;
+}
+
+// ---------- Journal ----------
+const JOURNAL_KEY = 'saJournal';
+let journal = {};
+
+function loadJournal() {
+  try {
+    const raw = localStorage.getItem(JOURNAL_KEY);
+    journal = raw ? JSON.parse(raw) : {};
+  } catch (e) { journal = {}; }
+}
+function persistJournal() {
+  try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal)); } catch (e) {}
+}
+
+function saveJournal() {
+  const date = document.getElementById('journalDate').value;
+  if (!date) { alert('Pick a date first'); return; }
+  const wins = document.getElementById('journalWins').value.trim();
+  const challenges = document.getElementById('journalChallenges').value.trim();
+  const improve = document.getElementById('journalImprove').value.trim();
+  const recs = document.getElementById('journalRecs').value.trim();
+
+  if (!wins && !challenges && !improve && !recs) {
+    alert('Add at least one note before saving');
+    return;
+  }
+
+  journal[date] = { wins, challenges, improve, recs };
+  persistJournal();
+
+  document.getElementById('journalWins').value = '';
+  document.getElementById('journalChallenges').value = '';
+  document.getElementById('journalImprove').value = '';
+  document.getElementById('journalRecs').value = '';
+  document.getElementById('journalDate').valueAsDate = new Date();
+
+  renderJournal();
+}
+
+function deleteJournalEntry(date) {
+  if (!confirm('Delete journal entry for ' + date + '?')) return;
+  delete journal[date];
+  persistJournal();
+  renderJournal();
+}
+
+function renderJournal() {
+  const dates = Object.keys(journal).sort().reverse();
+  const el = document.getElementById('journalList');
+  if (dates.length === 0) { el.innerHTML = '<div class="empty">No entries yet</div>'; return; }
+  el.innerHTML = dates.map(d => {
+    const e = journal[d];
+    const dObj = new Date(d + 'T00:00:00');
+    const label = dObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const fields = [
+      ['Achievements', e.wins],
+      ['Challenges', e.challenges],
+      ['Improve tomorrow', e.improve],
+      ['Recommendations', e.recs]
+    ].filter(([, v]) => v);
+    return `<div class="journal-card">
+      <div class="journal-date">
+        <span>${label}</span>
+        <button class="del" onclick="deleteJournalEntry('${d}')">✕</button>
+      </div>
+      ${fields.map(([label, val]) => `
+        <div class="journal-field">
+          <div class="jf-label">${label}</div>
+          <div class="jf-text">${val}</div>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
+
+function dismissWelcome() {
+  const el = document.getElementById('welcomeScreen');
+  if (el) el.classList.add('hidden');
+  try { sessionStorage.setItem('welcomeShown', '1'); } catch (e) {}
+}
+
+const DAILY_QUOTES = [
+  'Every strong tree was once a seed that held its ground.',
+  'The eagle does not hurry, yet it rises higher than the storm.',
+  'Growth is quiet work \u2014 done daily, seen eventually.',
+  'A river carves stone not by force, but by showing up every day.',
+  'The lion rests, but never doubts its strength.',
+  'Roots grow in the dark before the branch ever sees the sun.',
+  'Small, steady steps outrun the sprint that quits.',
+  'The forest was built one seed, one season, one year at a time.',
+  'What you tend to daily becomes what you are known for.',
+  'Even mountains started as ground someone chose not to give up on.',
+  'The wolf that hunts patiently eats better than the one that rushes.',
+  'Discipline today is the harvest you\u2019re not yet able to see.',
+  'A single seed, planted with intention, can outlast the one who planted it.',
+  'The strongest oak bent the most as a sapling \u2014 and still stood.'
+];
+
+function getDailyQuote() {
+  const start = new Date(new Date().getFullYear(), 0, 0);
+  const diff = new Date() - start;
+  const dayOfYear = Math.floor(diff / 86400000);
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+}
+
+function setWelcomeGreeting() {
+  const hour = new Date().getHours();
+  let greeting = 'Ready to make today count.';
+  if (hour < 12) greeting = 'Good morning \u2014 ready to make today count.';
+  else if (hour < 18) greeting = 'Good afternoon \u2014 let\u2019s keep the momentum going.';
+  else greeting = 'Good evening \u2014 let\u2019s wrap the day up strong.';
+  const el = document.getElementById('welcomeGreeting');
+  if (el) el.textContent = greeting;
+
+  const qEl = document.getElementById('welcomeQuote');
+  if (qEl) qEl.textContent = getDailyQuote();
+
+  try {
+    if (sessionStorage.getItem('welcomeShown') === '1') {
+      dismissWelcome();
+    }
+  } catch (e) {}
+}
+setWelcomeGreeting();
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+  });
+});
+
+// ---------- Reminders ----------
+const REMINDER_KEY = 'saReminders';
+let reminders = [];
+
+function loadReminders() {
+  try {
+    const raw = localStorage.getItem(REMINDER_KEY);
+    reminders = raw ? JSON.parse(raw) : [];
+  } catch (e) { reminders = []; }
+}
+
+function persistReminders() {
+  try { localStorage.setItem(REMINDER_KEY, JSON.stringify(reminders)); } catch (e) {}
+}
+
+function renderNotifyPermissionBox() {
+  const box = document.getElementById('notifyPermissionBox');
+  if (!box) return;
+  if (!('Notification' in window)) {
+    box.innerHTML = '<p style="color:var(--sub);font-size:12px;">Notifications aren\u2019t supported in this browser \u2014 reminders will still show as pop-ups while the app is open.</p>';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    box.innerHTML = '<p style="color:var(--green);font-size:12px;">Notifications enabled \u2713</p>';
+  } else if (Notification.permission === 'denied') {
+    box.innerHTML = '<p style="color:var(--red);font-size:12px;">Notifications blocked \u2014 enable them in your browser/site settings to get alerts.</p>';
+  } else {
+    box.innerHTML = '<button class="mini-btn primary" onclick="requestNotifyPermission()">Enable notifications</button>';
+  }
+}
+
+function requestNotifyPermission() {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(() => renderNotifyPermissionBox());
+}
+
+function addReminder() {
+  const time = document.getElementById('reminderTime').value;
+  const label = document.getElementById('reminderLabel').value.trim() || 'Time to log today\u2019s entries';
+  if (!time) { alert('Pick a time first'); return; }
+
+  reminders.push({ id: Date.now().toString(), time, label, lastFired: null });
+  persistReminders();
+
+  document.getElementById('reminderTime').value = '';
+  document.getElementById('reminderLabel').value = '';
+  renderReminders();
+
+  if ('Notification' in window && Notification.permission === 'default') {
+    requestNotifyPermission();
+  }
+}
+
+function deleteReminder(id) {
+  if (!confirm('Remove this reminder?')) return;
+  reminders = reminders.filter(r => r.id !== id);
+  persistReminders();
+  renderReminders();
+}
+
+function renderReminders() {
+  const el = document.getElementById('reminderList');
+  if (!el) return;
+  if (reminders.length === 0) { el.innerHTML = '<div class="empty">No reminders set yet</div>'; return; }
+  const sorted = [...reminders].sort((a, b) => a.time.localeCompare(b.time));
+  el.innerHTML = sorted.map(r => `
+    <div class="entry">
+      <span class="date">${r.time} \u2014 ${r.label}</span>
+      <span class="counts">
+        <button class="del" onclick="deleteReminder('${r.id}')">\u2715</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+function fireReminder(r) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification('Innocent\u2019s Loan Tracker', { body: r.label, icon: 'icon.png' });
+    } catch (e) {}
+  } else {
+    alert(r.label);
+  }
+}
+
+function checkReminders() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const nowStr = hh + ':' + mm;
+  const today = now.toISOString().slice(0, 10);
+
+  let changed = false;
+  reminders.forEach(r => {
+    if (r.time === nowStr && r.lastFired !== today) {
+      fireReminder(r);
+      r.lastFired = today;
+      changed = true;
+    }
+  });
+  if (changed) persistReminders();
+}
+
+setInterval(checkReminders, 30000);
+
+document.getElementById('entryDate').valueAsDate = new Date();
+document.getElementById('journalDate').valueAsDate = new Date();
+
+loadAll();
+loadDiscs();
+loadTargets();
+loadJournal();
+loadReminders();
+loadMoods();
+renderDailyLog();
+renderDiscs();
+renderJournal();
+renderWeekly();
+renderMonthly();
+renderReminders();
+renderNotifyPermissionBox();
+renderStreak();
+
+const qStripEl = document.getElementById('dailyQuoteStrip');
+if (qStripEl) qStripEl.textContent = '\u201c' + getDailyQuote() + '\u201d';
+
+const todayMood = moods[new Date().toISOString().slice(0, 10)];
+if (todayMood) pickMood(todayMood);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
